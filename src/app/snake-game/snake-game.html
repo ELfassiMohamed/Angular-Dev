@@ -1,1 +1,15 @@
-<p>snake-game works!</p>
+<div class="wrapper">
+    <h2>🐍 Snake — Score: {{ score }}</h2>
+    <div class="board">
+      <div
+        *ngFor="let cell of cells"
+        class="cell"
+        [class.snake]="isSnake(cell.x, cell.y)"
+        [class.food]="isFood(cell.x, cell.y)">
+      </div>
+      <div *ngIf="gameOver" class="overlay">
+        <p>Game Over!</p>
+        <button (click)="startGame()">Restart</button>
+      </div>
+    </div>
+  </div>
