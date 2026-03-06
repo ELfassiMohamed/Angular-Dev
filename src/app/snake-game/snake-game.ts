@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 
 const GRID = 20;
@@ -12,13 +12,14 @@ const GRID = 20;
 export class SnakeGame implements OnInit, OnDestroy {
   snake = [{ x: 10, y: 10 }];
   food = { x: 5, y: 5 };
-  dir = { x: 1, y: 0 };
+  dirX = 1;
+  dirY = 0;
+  nextDirX = 1;
+  nextDirY = 0;
   score = 0;
   gameOver = false;
-  cells = Array.from({ length: GRID * GRID }, (_, i) => ({
-    x: i % GRID,
-    y: Math.floor(i / GRID)
-  }));
+  rows = Array.from({ length: GRID }, (_, i) => i);
+  cols = Array.from({ length: GRID }, (_, i) => i);
 
   private interval: any;
 
@@ -27,7 +28,8 @@ export class SnakeGame implements OnInit, OnDestroy {
 
   startGame() {
     this.snake = [{ x: 10, y: 10 }];
-    this.dir = { x: 1, y: 0 };
+    this.dirX = 1; this.dirY = 0;
+    this.nextDirX = 1; this.nextDirY = 0;
     this.score = 0;
     this.gameOver = false;
     this.placeFood();
@@ -36,10 +38,24 @@ export class SnakeGame implements OnInit, OnDestroy {
   }
 
   tick() {
-    const head = { x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y };
+    this.dirX = this.nextDirX;
+    this.dirY = this.nextDirY;
 
-    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) return this.endGame();
-    if (this.snake.some(s => s.x === head.x && s.y === head.y)) return this.endGame();
+    const head = {
+      x: this.snake[0].x + this.dirX,
+      y: this.snake[0].y + this.dirY
+    };
+
+    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
+      this.gameOver = true;
+      clearInterval(this.interval);
+      return;
+    }
+    if (this.snake.some(s => s.x === head.x && s.y === head.y)) {
+      this.gameOver = true;
+      clearInterval(this.interval);
+      return;
+    }
 
     this.snake.unshift(head);
     if (head.x === this.food.x && head.y === this.food.y) {
@@ -51,22 +67,16 @@ export class SnakeGame implements OnInit, OnDestroy {
   }
 
   placeFood() {
-    this.food = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
-  }
-
-  endGame() { this.gameOver = true; clearInterval(this.interval); }
-
-  @HostListener('window:keydown', ['$event'])
-  onKey(e: KeyboardEvent) {
-    const map: Record<string, { x: number, y: number }> = {
-      ArrowUp:    { x: 0,  y: -1 },
-      ArrowDown:  { x: 0,  y:  1 },
-      ArrowLeft:  { x: -1, y:  0 },
-      ArrowRight: { x: 1,  y:  0 }
+    this.food = {
+      x: Math.floor(Math.random() * GRID),
+      y: Math.floor(Math.random() * GRID)
     };
-    const next = map[e.key];
-    if (next && !(next.x === -this.dir.x && next.y === -this.dir.y)) this.dir = next;
   }
+
+  goUp()    { if (this.dirY !== 1)  { this.nextDirX = 0;  this.nextDirY = -1; } }
+  goDown()  { if (this.dirY !== -1) { this.nextDirX = 0;  this.nextDirY = 1;  } }
+  goLeft()  { if (this.dirX !== 1)  { this.nextDirX = -1; this.nextDirY = 0;  } }
+  goRight() { if (this.dirX !== -1) { this.nextDirX = 1;  this.nextDirY = 0;  } }
 
   isSnake(x: number, y: number) { return this.snake.some(s => s.x === x && s.y === y); }
   isFood(x: number, y: number)  { return this.food.x === x && this.food.y === y; }

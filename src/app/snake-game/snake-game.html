@@ -1,15 +1,30 @@
 <div class="wrapper">
-    <h2>🐍 Snake — Score: {{ score }}</h2>
-    <div class="board">
+  <h2>🐍 Snake — Score: {{ score }}</h2>
+
+  <div class="board">
+    <ng-container *ngFor="let row of rows">
       <div
-        *ngFor="let cell of cells"
+        *ngFor="let col of cols"
         class="cell"
-        [class.snake]="isSnake(cell.x, cell.y)"
-        [class.food]="isFood(cell.x, cell.y)">
+        [class.snake]="isSnake(col, row)"
+        [class.food]="isFood(col, row)">
       </div>
-      <div *ngIf="gameOver" class="overlay">
-        <p>Game Over!</p>
-        <button (click)="startGame()">Restart</button>
-      </div>
+    </ng-container>
+
+    <div *ngIf="gameOver" class="overlay">
+      <p>Game Over!</p>
+      <button (click)="startGame()">Restart</button>
     </div>
   </div>
+
+  <div class="controls">
+    <div class="controls-row">
+      <button class="arrow" (click)="goUp()">▲</button>
+    </div>
+    <div class="controls-row">
+      <button class="arrow" (click)="goLeft()">◀</button>
+      <button class="arrow" (click)="goDown()">▼</button>
+      <button class="arrow" (click)="goRight()">▶</button>
+    </div>
+  </div>
+</div>
