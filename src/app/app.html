@@ -1,5 +1,41 @@
+<main class="shell">
+  <section class="panel">
+    <p class="eyebrow">Jarvis Voice Shell</p>
+    <h1>Reactive voice assistant frontend</h1>
+    <p class="summary">
+      This prototype listens to your microphone and animates the core visual
+      from live sound intensity.
+    </p>
 
+    <div class="stage">
+      <div
+        class="pulse-ring"
+        [style.opacity]="ringOpacity()"
+        [style.transform]="'translate(-50%, -50%) scale(' + orbScale() + ')'"
+      ></div>
 
-<main class="main">
-<h1>Hello Jarvis</h1>
-</main> 
+      <div
+        class="core"
+        [class.core-active]="isListening()"
+        [style.transform]="'scale(' + orbScale() + ')'"
+      >
+        <div class="core-glow"></div>
+        <span class="core-label">{{ levelPercent() }}%</span>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span class="status-dot" [class.status-dot-active]="isListening()"></span>
+      <span>{{ statusLabel() }}</span>
+    </div>
+
+    <button
+      type="button"
+      class="control"
+      (click)="toggleListening()"
+      [disabled]="isStarting() || !isBrowser()"
+    >
+      {{ isListening() ? 'Stop listening' : isStarting() ? 'Starting...' : 'Start listening' }}
+    </button>
+  </section>
+</main>
