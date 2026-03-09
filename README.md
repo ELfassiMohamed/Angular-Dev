@@ -1,59 +1,83 @@
 # JarvisBot
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.0.
+JarvisBot is a voice assistant frontend prototype built with Angular. The current version focuses on the first interaction layer: a simple web page that listens to microphone input and animates a visual core based on live sound intensity.
 
-## Development server
+## Current MVP
 
-To start a local development server, run:
+- Requests microphone access in the browser
+- Reads live input intensity with the Web Audio API
+- Animates a central assistant orb in real time
+- Displays basic state feedback such as idle, connecting, listening, and voice detected
+- Supports Angular SSR without running browser-only microphone code on the server
 
-```bash
-ng serve
-```
+## Project Goal
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The long-term goal is to build a Jarvis-style assistant interface. This first milestone is the visual and interaction shell for voice input. It establishes the frontend experience before adding speech recognition, assistant responses, and backend intelligence.
 
-## Code scaffolding
+## Tech Stack
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Angular 21
+- Angular SSR
+- TypeScript
+- Tailwind CSS 4
+- Web Audio API
+- Express
 
-```bash
-ng generate component component-name
-```
+## Run Locally
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+Install dependencies:
 
 ```bash
-ng build
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Start the development server:
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+Then open:
 
-For end-to-end (e2e) testing, run:
+```text
+http://localhost:4200/
+```
+
+Allow microphone access when the browser prompts you. Once listening starts, the central visual reacts to your voice volume in real time.
+
+## Build
+
+Create a production build with:
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The output is generated in `dist/jarvis_bot`.
 
-## Additional Resources
+## Test
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Run the test suite with:
+
+```bash
+npm test
+```
+
+## Current Structure
+
+- `src/app/app.ts`: microphone handling, audio analysis, reactive UI state
+- `src/app/app.html`: main assistant interface
+- `src/app/app.css`: visual design and animation styling
+
+## Next Steps
+
+- Add waveform bars or richer voice-reactive visuals
+- Add speech-to-text support
+- Add assistant response states
+- Connect the frontend to a backend assistant service
+- Introduce conversation history and command handling
+
+## Notes
+
+- Microphone features only work in a browser environment
+- If microphone permission is denied, the UI stays available but live input will not start
