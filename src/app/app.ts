@@ -7,6 +7,25 @@ import {
   signal,
 } from '@angular/core';
 
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: ((event: Event) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: ((event: Event) => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -21,6 +40,7 @@ export class App {
   private analyser: AnalyserNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private mediaStream: MediaStream | null = null;
+  private speechRecognition: SpeechRecognition | null = null;
   private sampleBuffer: Uint8Array | null = null;
   private frameId: number | null = null;
 
@@ -29,6 +49,9 @@ export class App {
   protected readonly isStarting = signal(false);
   protected readonly intensity = signal(0);
   protected readonly errorMessage = signal('');
+  protected readonly transcript = signal('');
+  protected readonly isTranscribing = signal(false);
+  protected readonly speechSupported = signal(false);
 
   protected readonly statusLabel = computed(() => {
     if (!this.isBrowser()) {
@@ -63,6 +86,17 @@ export class App {
     this.destroyRef.onDestroy(() => {
       this.stopListening();
     });
+
+    if (this.isBrowser()) {
+      const globalWindow = window as Window & {
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        SpeechRecognition?: SpeechRecognitionConstructor;
+      };
+
+      this.speechSupported.set(
+        Boolean(globalWindow.SpeechRecognition || globalWindow.webkitSpeechRecognition)
+      );
+    }
   }
 
   protected async toggleListening(): Promise<void> {
@@ -88,6 +122,8 @@ export class App {
     this.isStarting.set(true);
 
     try {
+      this.startSpeechRecognition();
+
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -153,10 +189,78 @@ export class App {
     this.analyser = null;
     this.sampleBuffer = null;
 
+    this.stopSpeechRecognition();
+
     this.mediaStream?.getTracks().forEach((track) => track.stop());
     this.mediaStream = null;
 
     void this.audioContext?.close();
     this.audioContext = null;
+  }
+
+  private startSpeechRecognition(): void {
+    if (!this.isBrowser()) {
+      return;
+    }
+
+    const globalWindow = window as Window & {
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+      SpeechRecognition?: SpeechRecognitionConstructor;
+    };
+
+    const RecognitionCtor = globalWindow.SpeechRecognition || globalWindow.webkitSpeechRecognition;
+    if (!RecognitionCtor) {
+      this.speechSupported.set(false);
+      return;
+    }
+
+    this.speechSupported.set(true);
+
+    if (!this.speechRecognition) {
+      this.speechRecognition = new RecognitionCtor();
+      this.speechRecognition.continuous = true;
+      this.speechRecognition.interimResults = true;
+      this.speechRecognition.lang = 'en-US';
+
+      this.speechRecognition.onstart = () => {
+        this.isTranscribing.set(true);
+      };
+
+      this.speechRecognition.onerror = () => {
+        this.isTranscribing.set(false);
+      };
+
+      this.speechRecognition.onend = () => {
+        this.isTranscribing.set(false);
+        if (this.isListening()) {
+          this.speechRecognition?.start();
+        }
+      };
+
+      this.speechRecognition.onresult = (event: SpeechRecognitionEvent) => {
+        let latest = '';
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          latest += result[0]?.transcript ?? '';
+        }
+        this.transcript.set(latest.trim());
+      };
+    }
+
+    this.transcript.set('');
+    this.speechRecognition.start();
+  }
+
+  private stopSpeechRecognition(): void {
+    if (!this.speechRecognition) {
+      return;
+    }
+
+    this.isTranscribing.set(false);
+    try {
+      this.speechRecognition.stop();
+    } catch {
+      // ignore stop errors from invalid state
+    }
   }
 }

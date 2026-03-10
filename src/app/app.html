@@ -1,11 +1,7 @@
 <main class="shell">
   <section class="panel">
-    <p class="eyebrow">Jarvis Voice Shell</p>
-    <h1>Reactive voice assistant frontend</h1>
-    <p class="summary">
-      This prototype listens to your microphone and animates the core visual
-      from live sound intensity.
-    </p>
+    <p class="eyebrow">Jarvis</p>
+    <h1>Voice assistant interface</h1>
 
     <div class="stage">
       <div
@@ -27,6 +23,19 @@
     <div class="status-row">
       <span class="status-dot" [class.status-dot-active]="isListening()"></span>
       <span>{{ statusLabel() }}</span>
+      <span *ngIf="speechSupported() && isListening()" class="status-pill">
+        {{ isTranscribing() ? 'Transcribing' : 'Mic live' }}
+      </span>
+      <span *ngIf="!speechSupported() && isListening()" class="status-pill warning">
+        Speech-to-text not supported
+      </span>
+    </div>
+
+    <div class="transcript" [class.transcript-active]="isListening()">
+      <p class="transcript-label">Live transcript</p>
+      <p class="transcript-text">
+        {{ transcript() || (isListening() ? 'Speak to see text appear here.' : 'Start listening to begin.') }}
+      </p>
     </div>
 
     <button

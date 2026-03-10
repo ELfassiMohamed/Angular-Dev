@@ -108,6 +108,7 @@ h1 {
   gap: 0.65rem;
   margin-bottom: 1.25rem;
   color: rgba(230, 251, 255, 0.88);
+  flex-wrap: wrap;
 }
 
 .status-dot {
@@ -122,6 +123,50 @@ h1 {
 .status-dot-active {
   background: #79e7ff;
   animation: blink 1.2s ease-in-out infinite;
+}
+
+.status-pill {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(121, 231, 255, 0.16);
+  border: 1px solid rgba(121, 231, 255, 0.35);
+}
+
+.status-pill.warning {
+  background: rgba(255, 189, 89, 0.16);
+  border-color: rgba(255, 189, 89, 0.35);
+  color: rgba(255, 232, 197, 0.9);
+}
+
+.transcript {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgba(8, 29, 38, 0.7);
+  border: 1px solid rgba(121, 231, 255, 0.15);
+  min-height: 5.5rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.transcript-active {
+  border-color: rgba(121, 231, 255, 0.35);
+  box-shadow: 0 0 24px rgba(121, 231, 255, 0.12);
+}
+
+.transcript-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(121, 231, 255, 0.8);
+}
+
+.transcript-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(230, 251, 255, 0.9);
 }
 
 .control {
