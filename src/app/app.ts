@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -29,6 +30,7 @@ interface SpeechRecognitionEvent extends Event {
 @Component({
   selector: 'app-root',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,9 +51,22 @@ export class App {
   protected readonly isStarting = signal(false);
   protected readonly intensity = signal(0);
   protected readonly errorMessage = signal('');
-  protected readonly transcript = signal('');
+  protected readonly finalTranscript = signal('');
+  protected readonly interimTranscript = signal('');
+  protected readonly transcript = computed(() => {
+    const finalText = this.finalTranscript().trim();
+    const interimText = this.interimTranscript().trim();
+    if (!finalText && !interimText) {
+      return '';
+    }
+    if (finalText && interimText) {
+      return `${finalText} ${interimText}`.trim();
+    }
+    return finalText || interimText;
+  });
   protected readonly isTranscribing = signal(false);
   protected readonly speechSupported = signal(false);
+  protected readonly speechError = signal('');
 
   protected readonly statusLabel = computed(() => {
     if (!this.isBrowser()) {
@@ -122,8 +137,6 @@ export class App {
     this.isStarting.set(true);
 
     try {
-      this.startSpeechRecognition();
-
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -131,6 +144,8 @@ export class App {
           autoGainControl: true,
         },
       });
+
+      this.startSpeechRecognition();
 
       this.audioContext = new AudioContext();
       this.analyser = this.audioContext.createAnalyser();
@@ -214,7 +229,14 @@ export class App {
       return;
     }
 
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      this.speechSupported.set(false);
+      this.speechError.set('Speech recognition requires HTTPS or localhost');
+      return;
+    }
+
     this.speechSupported.set(true);
+    this.speechError.set('');
 
     if (!this.speechRecognition) {
       this.speechRecognition = new RecognitionCtor();
@@ -226,8 +248,10 @@ export class App {
         this.isTranscribing.set(true);
       };
 
-      this.speechRecognition.onerror = () => {
+      this.speechRecognition.onerror = (event: Event) => {
         this.isTranscribing.set(false);
+        const errorEvent = event as { error?: string };
+        this.speechError.set(errorEvent.error ? `Speech error: ${errorEvent.error}` : 'Speech error');
       };
 
       this.speechRecognition.onend = () => {
@@ -238,16 +262,24 @@ export class App {
       };
 
       this.speechRecognition.onresult = (event: SpeechRecognitionEvent) => {
-        let latest = '';
+        let finalText = this.finalTranscript();
+        let interimText = '';
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
-          latest += result[0]?.transcript ?? '';
+          const transcript = result[0]?.transcript ?? '';
+          if (result.isFinal) {
+            finalText = `${finalText} ${transcript}`.trim();
+          } else {
+            interimText = `${interimText} ${transcript}`.trim();
+          }
         }
-        this.transcript.set(latest.trim());
+        this.finalTranscript.set(finalText.trim());
+        this.interimTranscript.set(interimText.trim());
       };
     }
 
-    this.transcript.set('');
+    this.finalTranscript.set('');
+    this.interimTranscript.set('');
     this.speechRecognition.start();
   }
 
@@ -257,6 +289,7 @@ export class App {
     }
 
     this.isTranscribing.set(false);
+    this.speechError.set('');
     try {
       this.speechRecognition.stop();
     } catch {

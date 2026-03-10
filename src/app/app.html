@@ -27,7 +27,7 @@
         {{ isTranscribing() ? 'Transcribing' : 'Mic live' }}
       </span>
       <span *ngIf="!speechSupported() && isListening()" class="status-pill warning">
-        Speech-to-text not supported
+        {{ speechError() || 'Speech-to-text not supported' }}
       </span>
     </div>
 
