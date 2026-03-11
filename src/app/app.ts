@@ -67,6 +67,7 @@ export class App {
   protected readonly isTranscribing = signal(false);
   protected readonly speechSupported = signal(false);
   protected readonly speechError = signal('');
+  protected readonly copyStatus = signal<'idle' | 'copied'>('idle');
 
   protected readonly statusLabel = computed(() => {
     if (!this.isBrowser()) {
@@ -121,6 +122,25 @@ export class App {
     }
 
     await this.startListening();
+  }
+
+  protected async copyTranscript(): Promise<void> {
+    const text = this.transcript();
+    if (!text || !this.isBrowser() || !navigator.clipboard) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copyStatus.set('copied');
+      
+      // Reset status after 2 seconds
+      setTimeout(() => {
+        this.copyStatus.set('idle');
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy transcript:', err);
+    }
   }
 
   private async startListening(): Promise<void> {
