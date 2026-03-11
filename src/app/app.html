@@ -1,9 +1,25 @@
 <main class="shell">
+  <!-- Background effects -->
+  <div class="bg-particles">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="bg-grid"></div>
+
   <section class="panel">
     <p class="eyebrow">Jarvis</p>
     <h1>Voice assistant interface</h1>
+    <hr class="header-line" />
 
     <div class="stage">
+      <!-- Orbit rings -->
+      <div class="orbit-ring"></div>
+      <div class="orbit-ring"></div>
+      <div class="orbit-ring"></div>
+
       <div
         class="pulse-ring"
         [style.opacity]="ringOpacity()"
@@ -17,6 +33,13 @@
       >
         <div class="core-glow"></div>
         <span class="core-label">{{ levelPercent() }}%</span>
+      </div>
+
+      <!-- Waveform visualizer -->
+      <div class="waveform">
+        @for (bar of waveformBars(); track $index) {
+          <span [style.height.px]="bar"></span>
+        }
       </div>
     </div>
 

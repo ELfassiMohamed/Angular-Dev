@@ -98,6 +98,22 @@ export class App {
   protected readonly ringOpacity = computed(() => (0.25 + this.intensity() * 0.55).toFixed(3));
   protected readonly levelPercent = computed(() => Math.round(this.intensity() * 100));
 
+  protected readonly waveformBars = computed(() => {
+    const level = this.intensity();
+    const barCount = 20;
+    const bars: number[] = [];
+    for (let i = 0; i < barCount; i++) {
+      // Create a pseudo-wave pattern: bars near center are taller
+      const centerDistance = Math.abs(i - barCount / 2) / (barCount / 2);
+      const waveShape = 1 - centerDistance * 0.6;
+      // Add deterministic variation per bar using sin
+      const variation = 0.7 + 0.3 * Math.sin(i * 1.8 + level * 12);
+      const height = Math.max(3, level * 36 * waveShape * variation);
+      bars.push(Math.round(height));
+    }
+    return bars;
+  });
+
   constructor() {
     this.destroyRef.onDestroy(() => {
       this.stopListening();
