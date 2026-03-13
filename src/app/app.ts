@@ -3,6 +3,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -25,6 +27,12 @@ interface SpeechRecognition extends EventTarget {
 interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
   results: SpeechRecognitionResultList;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'bot';
+  text: string;
+  timestamp: Date;
 }
 
 @Component({
@@ -68,6 +76,18 @@ export class App {
   protected readonly speechSupported = signal(false);
   protected readonly speechError = signal('');
   protected readonly copyStatus = signal<'idle' | 'copied'>('idle');
+
+  @ViewChild('messageArea') private messageArea?: ElementRef<HTMLDivElement>;
+
+  protected readonly messages = signal<ChatMessage[]>([
+    {
+      role: 'bot',
+      text: 'Hello! I am Jarvis. How can I assist you today?',
+      timestamp: new Date(),
+    },
+  ]);
+  protected readonly isBotTyping = signal(false);
+  protected readonly currentInput = signal('');
 
   protected readonly statusLabel = computed(() => {
     if (!this.isBrowser()) {
@@ -157,6 +177,76 @@ export class App {
     } catch (err) {
       console.error('Failed to copy transcript:', err);
     }
+  }
+
+  protected updateInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.currentInput.set(target.value);
+  }
+
+  protected onInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.sendTextMessage();
+    }
+  }
+
+  protected sendTextMessage(): void {
+    const text = this.currentInput().trim();
+    if (!text) return;
+
+    this.addMessage('user', text);
+    this.currentInput.set('');
+    this.generateBotReply();
+  }
+
+  private addMessage(role: 'user' | 'bot', text: string): void {
+    this.messages.update((msgs) => [
+      ...msgs,
+      {
+        role,
+        text,
+        timestamp: new Date(),
+      },
+    ]);
+    this.scrollToBottom();
+  }
+
+  private async generateBotReply(): Promise<void> {
+    if (this.isBotTyping()) return;
+
+    this.isBotTyping.set(true);
+    this.scrollToBottom();
+
+    // Simulate thinking delay
+    const delay = 1000 + Math.random() * 1000;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    const replies = [
+      "I've noted that. Is there anything else you'd like to discuss?",
+      "That's interesting. Tell me more.",
+      "I'm processing your request. One moment please.",
+      "Understood. I'm here to help with any questions you have.",
+      "System check complete. All functions operating normally.",
+      "Fascinating perspective. How should we proceed?",
+    ];
+    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+    this.isBotTyping.set(false);
+    this.addMessage('bot', randomReply);
+  }
+
+  private scrollToBottom(): void {
+    // Small timeout to allow DOM to update with new message
+    setTimeout(() => {
+      if (this.messageArea) {
+        const el = this.messageArea.nativeElement;
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    }, 50);
   }
 
   private async startListening(): Promise<void> {
@@ -298,7 +388,7 @@ export class App {
       };
 
       this.speechRecognition.onresult = (event: SpeechRecognitionEvent) => {
-        let finalText = this.finalTranscript();
+        let finalText = '';
         let interimText = '';
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
@@ -309,8 +399,15 @@ export class App {
             interimText = `${interimText} ${transcript}`.trim();
           }
         }
-        this.finalTranscript.set(finalText.trim());
-        this.interimTranscript.set(interimText.trim());
+        
+        if (finalText) {
+          this.addMessage('user', finalText);
+          this.generateBotReply();
+          this.finalTranscript.set('');
+          this.interimTranscript.set('');
+        } else {
+          this.interimTranscript.set(interimText.trim());
+        }
       };
     }
 

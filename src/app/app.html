@@ -9,105 +9,100 @@
   </div>
   <div class="bg-grid"></div>
 
-  <section class="panel">
-    <p class="eyebrow">Jarvis</p>
-    <h1>Voice assistant interface</h1>
-    <hr class="header-line" />
-
-    <div class="stage">
-      <!-- Orbit rings -->
-      <div class="orbit-ring"></div>
-      <div class="orbit-ring"></div>
-      <div class="orbit-ring"></div>
-
-      <div
-        class="pulse-ring"
-        [style.opacity]="ringOpacity()"
-        [style.transform]="'translate(-50%, -50%) scale(' + orbScale() + ')'"
-      ></div>
-
-      <div
-        class="core"
-        [class.core-active]="isListening()"
-        [style.transform]="'scale(' + orbScale() + ')'"
-      >
-        <div class="core-glow"></div>
-        <span class="core-label">{{ levelPercent() }}%</span>
+  <section class="chat-panel">
+    <header class="chat-header">
+      <div class="header-content">
+        <div class="bot-info">
+          <div class="avatar">
+            <div class="avatar-ring"></div>
+            <div class="avatar-core"></div>
+          </div>
+          <div>
+            <h1>Jarvis</h1>
+            <div class="status-row">
+              <span class="status-dot" [class.status-dot-active]="isListening()"></span>
+              <span class="status-text">{{ statusLabel() }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span *ngIf="speechSupported() && isListening()" class="status-pill">
+            {{ isTranscribing() ? 'Transcribing' : 'Mic live' }}
+          </span>
+          <span *ngIf="!speechSupported() && isListening()" class="status-pill warning">
+            {{ speechError() || 'Speech unsupported' }}
+          </span>
+        </div>
       </div>
+    </header>
 
-      <!-- Waveform visualizer -->
-      <div class="waveform">
-        @for (bar of waveformBars(); track $index) {
-          <span [style.height.px]="bar"></span>
+    <div class="message-area" #messageArea>
+      <div class="message-list">
+        @for (msg of messages(); track msg.timestamp.getTime()) {
+          <div class="message-row" [class.user-row]="msg.role === 'user'">
+            <div class="message-bubble" [class.user-bubble]="msg.role === 'user'">
+              <p>{{ msg.text }}</p>
+              <span class="msg-time">{{ msg.timestamp | date: 'HH:mm' }}</span>
+            </div>
+          </div>
+        }
+
+        @if (isBotTyping()) {
+          <div class="message-row">
+            <div class="message-bubble bot-bubble typing">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
         }
       </div>
     </div>
 
-    <div class="status-row">
-      <span class="status-dot" [class.status-dot-active]="isListening()"></span>
-      <span>{{ statusLabel() }}</span>
-      <span *ngIf="speechSupported() && isListening()" class="status-pill">
-        {{ isTranscribing() ? 'Transcribing' : 'Mic live' }}
-      </span>
-      <span *ngIf="!speechSupported() && isListening()" class="status-pill warning">
-        {{ speechError() || 'Speech-to-text not supported' }}
-      </span>
-    </div>
-
-    <div class="transcript" [class.transcript-active]="isListening() || transcript()">
-      <div class="transcript-header">
-        <p class="transcript-label">Live transcript</p>
+    <footer class="input-bar">
+      <div class="input-container">
         <button
           type="button"
-          class="copy-btn"
-          *ngIf="transcript()"
-          (click)="copyTranscript()"
-          [title]="copyStatus() === 'copied' ? 'Copied!' : 'Copy transcript'"
+          class="mic-btn"
+          [class.active]="isListening()"
+          (click)="toggleListening()"
+          [disabled]="isStarting() || !isBrowser()"
+          [title]="isListening() ? 'Stop Listening' : 'Start Voice Input'"
         >
-          <svg
-            *ngIf="copyStatus() === 'idle'"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
           </svg>
-          <svg
-            *ngIf="copyStatus() === 'copied'"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-green-500"
-          >
-            <path d="M20 6 9 17l-5-5" />
+          <div class="mic-glow" *ngIf="isListening()"></div>
+        </button>
+
+        <input
+          #textInput
+          type="text"
+          placeholder="Type a message..."
+          [value]="currentInput()"
+          (input)="updateInput($event)"
+          (keydown)="onInputKeydown($event)"
+          [disabled]="!isBrowser()"
+        />
+
+        <button
+          type="button"
+          class="send-btn"
+          [disabled]="!currentInput().trim()"
+          (click)="sendTextMessage()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
       </div>
-      <p class="transcript-text">
-        {{ transcript() || (isListening() ? 'Speak to see text appear here.' : 'Start listening to begin.') }}
-      </p>
-    </div>
-
-    <button
-      type="button"
-      class="control"
-      (click)="toggleListening()"
-      [disabled]="isStarting() || !isBrowser()"
-    >
-      {{ isListening() ? 'Stop listening' : isStarting() ? 'Starting...' : 'Start listening' }}
-    </button>
+      <div class="live-transcript" *ngIf="isListening() && interimTranscript()">
+        <span class="transcript-label">Hearing:</span>
+        <span class="transcript-text">{{ interimTranscript() }}</span>
+      </div>
+    </footer>
   </section>
 </main>
