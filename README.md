@@ -1,83 +1,77 @@
-# JarvisBot
+# FAQ Chatbot
 
-JarvisBot is a voice assistant frontend prototype built with Angular. The current version focuses on the first interaction layer: a simple web page that listens to microphone input and animates a visual core based on live sound intensity.
+An AI-powered FAQ assistant built with **Angular 21** and **FastAPI**. This project features a futuristic, voice-reactive interface with real-time streaming LLM responses.
 
-## Current MVP
+## ✨ Key Features
 
-- Requests microphone access in the browser
-- Reads live input intensity with the Web Audio API
-- Animates a central assistant orb in real time
-- Displays basic state feedback such as idle, connecting, listening, and voice detected
-- Supports Angular SSR without running browser-only microphone code on the server
+- 🎙️ **Voice-Reactive Visuals**: A central assistant orb and waveform bars that react dynamically to microphone input intensity.
+- 💬 **AI-Powered Chat**: Intelligent conversation focused on FAQ data using Ollama and the `SmallLM2` model.
+- ⚡ **Real-time Streaming**: Chat responses are streamed chunk-by-chunk using NDJSON for a seamless user experience.
+- 🎨 **Modern Aesthetic**: A premium dark-themed interface built with **Tailwind CSS 4** and Lucide icons.
+- 📱 **Fully Responsive**: Designed to work across desktop and mobile browsers.
 
-## Project Goal
+## 🛠️ Tech Stack
 
-The long-term goal is to build a Jarvis-style assistant interface. This first milestone is the visual and interaction shell for voice input. It establishes the frontend experience before adding speech recognition, assistant responses, and backend intelligence.
+### Frontend
+- **Framework**: Angular 21 (Standalone components)
+- **Styling**: Tailwind CSS 4
+- **State Management**: Signals
+- **Icons**: Lucide Angular
+- **APIs**: Web Audio API, Web Speech API
 
-## Tech Stack
+### Backend
+- **Framework**: FastAPI
+- **LLM Engine**: Ollama (`smollm2:1.7b-instruct-q4_0`)
+- **Data Format**: NDJSON streaming
 
-- Angular 21
-- Angular SSR
-- TypeScript
-- Tailwind CSS 4
-- Web Audio API
-- Express
+---
 
-## Run Locally
+## 🚀 Getting Started
 
-Install dependencies:
+### 1. Backend Setup (FastAPI)
 
-```bash
-npm install
-```
+1. **Install Ollama**: Download and install from [ollama.com](https://ollama.com/).
+2. **Pull the Model**:
+   ```bash
+   ollama pull smollm2:1.7b-instruct-q4_0
+   ```
+3. **Setup Environment**:
+   ```bash
+   cd FastAPI
+   python -m venv .venv
+   # Windows: .venv\Scripts\activate
+   # Linux/Mac: source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+4. **Run the Server**:
+   ```bash
+   python main.py
+   ```
+   *The backend will run on `http://localhost:8000`.*
 
-Start the development server:
+### 2. Frontend Setup (Angular)
 
-```bash
-npm start
-```
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Run Development Server**:
+   ```bash
+   npm start
+   ```
+3. **Open the App**:
+   Visit `http://localhost:4200` in your browser.
 
-Then open:
+---
 
-```text
-http://localhost:4200/
-```
+## 📂 Project Structure
 
-Allow microphone access when the browser prompts you. Once listening starts, the central visual reacts to your voice volume in real time.
+- `src/app/app.ts`: Core frontend logic (audio analysis, chat state).
+- `src/app/app.html`: Main visual interface (Assistant Orb & Chat).
+- `FastAPI/main.py`: AI backend logic & Ollama integration.
+- `FastAPI/faq.json`: Knowledge base for the assistant.
 
-## Build
+## 📝 Notes
 
-Create a production build with:
-
-```bash
-npm run build
-```
-
-The output is generated in `dist/jarvis_bot`.
-
-## Test
-
-Run the test suite with:
-
-```bash
-npm test
-```
-
-## Current Structure
-
-- `src/app/app.ts`: microphone handling, audio analysis, reactive UI state
-- `src/app/app.html`: main assistant interface
-- `src/app/app.css`: visual design and animation styling
-
-## Next Steps
-
-- Add waveform bars or richer voice-reactive visuals
-- Add speech-to-text support
-- Add assistant response states
-- Connect the frontend to a backend assistant service
-- Introduce conversation history and command handling
-
-## Notes
-
-- Microphone features only work in a browser environment
-- If microphone permission is denied, the UI stays available but live input will not start
+- Developed as part of the PFE (Projet de Fin d'Études).
+- Ensure Ollama is running before starting the chat interaction.
