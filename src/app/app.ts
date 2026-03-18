@@ -218,22 +218,76 @@ export class App {
     this.isBotTyping.set(true);
     this.scrollToBottom();
 
-    // Simulate thinking delay
-    const delay = 1000 + Math.random() * 1000;
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    const currentMessages = this.messages();
+    if (currentMessages.length === 0) {
+      this.isBotTyping.set(false);
+      return;
+    }
 
-    const replies = [
-      "I've noted that. Is there anything else you'd like to discuss?",
-      "That's interesting. Tell me more.",
-      "I'm processing your request. One moment please.",
-      "Understood. I'm here to help with any questions you have.",
-      "System check complete. All functions operating normally.",
-      "Fascinating perspective. How should we proceed?",
-    ];
-    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+    const userMessage = currentMessages[currentMessages.length - 1].text;
+    const history = currentMessages.slice(0, currentMessages.length - 1).map(msg => ({
+      role: msg.role === 'bot' ? 'assistant' : 'user',
+      content: msg.text
+    }));
 
-    this.isBotTyping.set(false);
-    this.addMessage('bot', randomReply);
+    try {
+      const response = await fetch('http://localhost:8000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          history: history,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Network response was not ok');
+      }
+
+      this.isBotTyping.set(false);
+      this.addMessage('bot', '');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data = JSON.parse(line);
+              if (data.text) {
+                this.messages.update((msgs) => {
+                  const newMsgs = [...msgs];
+                  const lastIdx = newMsgs.length - 1;
+                  newMsgs[lastIdx] = {
+                    ...newMsgs[lastIdx],
+                    text: newMsgs[lastIdx].text + data.text
+                  };
+                  return newMsgs;
+                });
+                this.scrollToBottom();
+              }
+            } catch (e) {
+              console.error('Error parsing NDJSON line', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching bot reply:', error);
+      this.isBotTyping.set(false);
+      this.addMessage('bot', 'Error: Unable to connect to the assistant server. Ensure FastAPI is running on port 8000.');
+    }
   }
 
   private scrollToBottom(): void {
