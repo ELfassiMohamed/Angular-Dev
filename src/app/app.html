@@ -1,108 +1,121 @@
-<main class="shell">
-  <!-- Background effects -->
-  <div class="bg-particles">
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span><span></span>
-    <span></span><span></span><span></span><span></span><span></span>
+<main class="demo-shell">
+  <div class="widget-root" [ngStyle]="widgetStyles()">
+    @if (isOpen()) {
+      <section class="chat-window">
+        <header class="chat-header">
+          <div class="header-gradient"></div>
+
+          <div class="header-content">
+            <div class="agent-heading">
+              <div class="avatar-wrap">
+                <img class="avatar-image" [src]="assistant().avatar" [alt]="assistant().name" />
+                <span
+                  class="status-indicator"
+                  [class.status-busy]="assistant().status === 'busy'"
+                  [class.status-offline]="assistant().status === 'offline'"
+                ></span>
+              </div>
+
+              <div>
+                <h1>{{ assistant().name }}</h1>
+                <p>{{ assistant().role }}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button ghost-button"
+              (click)="toggleOpen()"
+              aria-label="Close chat"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="message-area" #messageArea>
+          @for (message of messages(); track trackByMessageId($index, message)) {
+            <div class="message-row" [class.message-row-user]="message.role === 'user'">
+              <img
+                class="message-avatar"
+                [src]="message.role === 'bot' ? assistant().avatar : 'https://github.com/shadcn.png'"
+                [alt]="message.role === 'bot' ? assistant().name : 'You'"
+              />
+
+              <div class="message-stack" [class.message-stack-user]="message.role === 'user'">
+                <span class="message-label">
+                  {{ message.role === 'bot' ? assistant().name : 'You' }}
+                </span>
+                <div class="message-bubble" [class.message-bubble-user]="message.role === 'user'">
+                  <p>{{ message.text }}</p>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (isBotTyping()) {
+            <div class="message-row">
+              <img class="message-avatar" [src]="assistant().avatar" [alt]="assistant().name" />
+              <div class="message-stack">
+                <div class="message-bubble typing-bubble">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          }
+        </section>
+
+        <footer class="input-panel">
+          <form class="input-form" (ngSubmit)="sendTextMessage()">
+            <input
+              type="text"
+              name="message"
+              autocomplete="off"
+              [ngModel]="draftMessage()"
+              (ngModelChange)="setDraftMessage($event)"
+              [placeholder]="inputPlaceholder()"
+            />
+
+            <button
+              type="submit"
+              class="icon-button send-button"
+              [disabled]="!draftMessage().trim()"
+              aria-label="Send message"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 2 11 13"></path>
+                <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+              </svg>
+            </button>
+          </form>
+        </footer>
+      </section>
+    }
+
+    <button
+      type="button"
+      class="toggle-button"
+      [class.toggle-button-open]="isOpen()"
+      (click)="toggleOpen()"
+      [attr.aria-label]="isOpen() ? 'Close chat widget' : 'Open chat widget'"
+    >
+      @if (isOpen()) {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      } @else {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10h10"></path>
+          <path d="M7 14h7"></path>
+          <path d="M5 19V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 4Z"></path>
+        </svg>
+      }
+    </button>
   </div>
-  <div class="bg-grid"></div>
-
-  <section class="chat-panel">
-    <header class="chat-header">
-      <div class="header-content">
-        <div class="bot-info">
-          <div class="avatar">
-            <div class="avatar-ring"></div>
-            <div class="avatar-core"></div>
-          </div>
-          <div>
-            <h1>Jarvis</h1>
-            <div class="status-row">
-              <span class="status-dot" [class.status-dot-active]="isListening()"></span>
-              <span class="status-text">{{ statusLabel() }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="header-actions">
-          <span *ngIf="speechSupported() && isListening()" class="status-pill">
-            {{ isTranscribing() ? 'Transcribing' : 'Mic live' }}
-          </span>
-          <span *ngIf="!speechSupported() && isListening()" class="status-pill warning">
-            {{ speechError() || 'Speech unsupported' }}
-          </span>
-        </div>
-      </div>
-    </header>
-
-    <div class="message-area" #messageArea>
-      <div class="message-list">
-        @for (msg of messages(); track msg.timestamp.getTime()) {
-          <div class="message-row" [class.user-row]="msg.role === 'user'">
-            <div class="message-bubble" [class.user-bubble]="msg.role === 'user'">
-              <p>{{ msg.text }}</p>
-              <span class="msg-time">{{ msg.timestamp | date: 'HH:mm' }}</span>
-            </div>
-          </div>
-        }
-
-        @if (isBotTyping()) {
-          <div class="message-row">
-            <div class="message-bubble bot-bubble typing">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <footer class="input-bar">
-      <div class="input-container">
-        <button
-          type="button"
-          class="mic-btn"
-          [class.active]="isListening()"
-          (click)="toggleListening()"
-          [disabled]="isStarting() || !isBrowser()"
-          [title]="isListening() ? 'Stop Listening' : 'Start Voice Input'"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" x2="12" y1="19" y2="22"/>
-          </svg>
-          <div class="mic-glow" *ngIf="isListening()"></div>
-        </button>
-
-        <input
-          #textInput
-          type="text"
-          placeholder="Type a message..."
-          [value]="currentInput()"
-          (input)="updateInput($event)"
-          (keydown)="onInputKeydown($event)"
-          [disabled]="!isBrowser()"
-        />
-
-        <button
-          type="button"
-          class="send-btn"
-          [disabled]="!currentInput().trim()"
-          (click)="sendTextMessage()"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
-      </div>
-      <div class="live-transcript" *ngIf="isListening() && interimTranscript()">
-        <span class="transcript-label">Hearing:</span>
-        <span class="transcript-text">{{ interimTranscript() }}</span>
-      </div>
-    </footer>
-  </section>
 </main>
