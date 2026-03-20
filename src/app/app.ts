@@ -159,7 +159,7 @@ export class App {
       }
 
       this.isBotTyping.set(false);
-      this.addMessage('bot', '');
+      this.addMessage({ role: 'bot', text: '', assistantId: FAQ_ASSISTANT.id });
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -198,7 +198,7 @@ export class App {
     } catch (error) {
       console.error('Error fetching bot reply:', error);
       this.isBotTyping.set(false);
-      this.addMessage('bot', 'Error: Unable to connect to the assistant server. Ensure FastAPI is running on port 8000.');
+      this.addMessage({ role: 'bot', text: 'Error: Unable to connect to the assistant server. Ensure FastAPI is running on port 8000.', assistantId: FAQ_ASSISTANT.id });
     }
   }
 
@@ -213,48 +213,5 @@ export class App {
         });
       }
     }, 50);
-  }
-
-    if (this.pendingReplies.length > 0) {
-      void this.processReplies();
-    }
-  }
-
-  private buildReply(prompt: string): string {
-    const normalizedPrompt = prompt.toLowerCase();
-
-    if (normalizedPrompt.includes('faq') || normalizedPrompt.includes('help')) {
-      return 'FAQ Assistant can help with common product and support questions. Share the topic you want to cover and I will keep the answer focused.';
-    }
-
-    if (normalizedPrompt.includes('design') || normalizedPrompt.includes('ui')) {
-      return 'FAQ Assistant can help clarify the user-facing flow. Tell me which section should feel clearer and I will help refine it.';
-    }
-
-    if (normalizedPrompt.includes('bug') || normalizedPrompt.includes('issue')) {
-      return 'FAQ Assistant can help narrow the issue. Describe the behavior you expected and what happened instead.';
-    }
-
-    const genericReplies = [
-      'FAQ Assistant is ready. Give me one more detail and I will turn it into the next helpful step.',
-      'FAQ Assistant can help with that. Describe the exact outcome you want and I will keep the response practical.',
-      'FAQ Assistant has the context. Share the specific question or flow you want to improve and I will focus there.',
-    ];
-
-    return genericReplies[prompt.length % genericReplies.length];
-  }
-
-  private scrollToBottom(): void {
-    setTimeout(() => {
-      if (!this.messageArea) {
-        return;
-      }
-
-      const element = this.messageArea.nativeElement;
-      element.scrollTo({
-        top: element.scrollHeight,
-        behavior: 'smooth',
-      });
-    }, 40);
   }
 }
