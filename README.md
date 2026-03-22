@@ -2,15 +2,7 @@
 
 An AI-powered FAQ assistant built with **Angular 21** and **FastAPI**. This project features a futuristic, voice-reactive interface with real-time streaming LLM responses.
 
-## ✨ Key Features
-
-- 🎙️ **Voice-Reactive Visuals**: A central assistant orb and waveform bars that react dynamically to microphone input intensity.
-- 💬 **AI-Powered Chat**: Intelligent conversation focused on FAQ data using Ollama and the `SmallLM2` model.
-- ⚡ **Real-time Streaming**: Chat responses are streamed chunk-by-chunk using NDJSON for a seamless user experience.
-- 🎨 **Modern Aesthetic**: A premium dark-themed interface built with **Tailwind CSS 4** and Lucide icons.
-- 📱 **Fully Responsive**: Designed to work across desktop and mobile browsers.
-
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **Framework**: Angular 21 (Standalone components)
@@ -26,7 +18,7 @@ An AI-powered FAQ assistant built with **Angular 21** and **FastAPI**. This proj
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Backend Setup (FastAPI)
 
@@ -64,14 +56,13 @@ An AI-powered FAQ assistant built with **Angular 21** and **FastAPI**. This proj
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 - `src/app/app.ts`: Core frontend logic (audio analysis, chat state).
 - `src/app/app.html`: Main visual interface (Assistant Orb & Chat).
 - `FastAPI/main.py`: AI backend logic & Ollama integration.
 - `FastAPI/faq.json`: Knowledge base for the assistant.
 
-## 📝 Notes
+##  Notes
 
-- Developed as part of the PFE (Projet de Fin d'Études).
 - Ensure Ollama is running before starting the chat interaction.
