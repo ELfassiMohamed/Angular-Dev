@@ -27,13 +27,21 @@ FAQ = "\n\n".join(
     for item in data["faqs"]
 )
 
-SYSTEM_PROMPT = f"""You are a FAQ assistant.
-Answer ONLY using the FAQ document below.
-If the answer is not there, say: "Please contact support."
+SYSTEM_PROMPT = f"""You are a strict FAQ-only assistant for a Morocco travel guide.
+Your ONLY job is to answer questions using the FAQ document below.
 
---- FAQ ---
+STRICT RULES:
+1. ONLY answer questions that are covered in the FAQ below.
+2. Do NOT use any outside knowledge, even if you know the answer.
+3. Do NOT answer general knowledge questions, math, coding, or anything unrelated.
+4. If the user's question is NOT covered in the FAQ, respond EXACTLY with: "I'm sorry, this question is not covered in our FAQ. Please contact support for further assistance."
+5. Keep your answers concise and based strictly on the FAQ content.
+
+--- FAQ START ---
 {FAQ}
------------"""
+--- FAQ END ---
+
+Remember: you must REFUSE to answer anything not in the FAQ above."""
 
 class Message(BaseModel):
     role: str
@@ -49,15 +57,17 @@ def health():
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    messages = [m.model_dump() for m in req.history] + [
+    # Always inject system prompt as the first message in the conversation
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ] + [m.model_dump() for m in req.history] + [
         {"role": "user", "content": req.message}
     ]
 
     async def stream_response():
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             async with client.stream("POST", f"{OLLAMA_URL}/api/chat",
-                json={"model": MODEL, "system": SYSTEM_PROMPT,
-                      "messages": messages, "stream": True}
+                json={"model": MODEL, "messages": messages, "stream": True}
             ) as r:
                 async for line in r.aiter_lines():
                     if line:
