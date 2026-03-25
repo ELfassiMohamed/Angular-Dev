@@ -21,27 +21,43 @@ MODEL      = os.getenv("MODEL", "smollm2:1.7b-instruct-q4_0")
 with open("faq.json", encoding="utf-8") as f:
     data = json.load(f)
 
-# Format into clean Q&A text for the system prompt
-FAQ = "\n\n".join(
-    f"Q: {item['question']}\nA: {item['answer']}"
-    for item in data["faqs"]
-)
+STOP_WORDS = {
+    "do", "i", "a", "the", "is", "it", "to", "for", "of", "and", "or", "in", "on", "at", "how", 
+    "what", "where", "when", "why", "can", "should", "will", "be", "are", "me", "my", "you",
+    "your", "with", "as", "if", "but", "have", "has", "make", "get", "go", "use", "want"
+}
 
-SYSTEM_PROMPT = f"""You are a strict FAQ-only assistant for a Morocco travel guide.
-Your ONLY job is to answer questions using the FAQ document below.
-
-STRICT RULES:
-1. ONLY answer questions that are covered in the FAQ below.
-2. Do NOT use any outside knowledge, even if you know the answer.
-3. Do NOT answer general knowledge questions, math, coding, or anything unrelated.
-4. If the user's question is NOT covered in the FAQ, respond EXACTLY with: "I'm sorry, this question is not covered in our FAQ. Please contact support for further assistance."
-5. Keep your answers concise and based strictly on the FAQ content.
-
---- FAQ START ---
-{FAQ}
---- FAQ END ---
-
-Remember: you must REFUSE to answer anything not in the FAQ above."""
+def search_faqs(query: str, faqs: list, top_k: int = 3) -> str:
+    """Keyword-based search with whole-word matching and threshold filtering."""
+    # Remove punctuation and split into lowercase words
+    clean_query = "".join(char if char.isalnum() or char.isspace() else " " for char in query.lower())
+    query_words = {word for word in clean_query.split() if word not in STOP_WORDS}
+    
+    if not query_words:
+        return ""
+    
+    scored_faqs = []
+    for item in faqs:
+        score = 0
+        search_text = (item['question'] + " " + item['answer']).lower()
+        clean_search = "".join(char if char.isalnum() or char.isspace() else " " for char in search_text)
+        search_words = set(clean_search.split())
+        
+        question_words = set("".join(char if char.isalnum() or char.isspace() else " " for char in item['question'].lower()).split())
+        
+        for word in query_words:
+            if word in search_words:
+                # Prioritize matches in the question
+                score += 3 if word in question_words else 1
+        
+        # Only include if there's a strong match (e.g., in the question or multiple in the answer)
+        if score >= 2:
+            scored_faqs.append((score, item))
+            
+    # Sort by score and take top_k
+    scored_faqs.sort(key=lambda x: x[0], reverse=True)
+    relevant = [f"Q: {item['question']}\nA: {item['answer']}" for _, item in scored_faqs[:top_k]]
+    return "\n\n".join(relevant)
 
 class Message(BaseModel):
     role: str
@@ -57,9 +73,28 @@ def health():
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    # Always inject system prompt as the first message in the conversation
+    # Retrieve only relevant context pieces
+    relevant_context = search_faqs(req.message, data["faqs"])
+    
+    if relevant_context:
+        prompt = f"""You are a strict FAQ-only assistant for a Morocco travel guide.
+Your ONLY job is to answer questions using the FAQ document snippets below.
+
+STRICT RULES:
+1. ONLY answer questions using the provided FAQ items.
+2. Do NOT use outside knowledge.
+3. If the answer is not in the FAQ snippets, say: "I'm sorry, this question is not covered in our FAQ. Please contact support."
+4. Keep the answer concise.
+
+--- RELEVANT FAQ SNIPPETS ---
+{relevant_context}
+---------------------------"""
+    else:
+        # No context found, force refusal
+        prompt = "You are an FAQ assistant. The user asked a question not found in the FAQ. Respond EXACTLY with: 'I'm sorry, this question is not covered in our FAQ. Please contact support.'"
+
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
+        {"role": "system", "content": prompt}
     ] + [m.model_dump() for m in req.history] + [
         {"role": "user", "content": req.message}
     ]
