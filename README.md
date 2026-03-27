@@ -2,7 +2,7 @@
 
 An AI-powered FAQ assistant built with **Angular 21** and **FastAPI**. Optimized for **instant responses (<2s)** and **strict adherence** to local knowledge using **Redis Stack (RediSearch)** and **Ollama**.
 
-## 🏗️ System Architecture
+##  System Architecture
 
 Our architecture ensures 100% strictness by validating keywords before querying the LLM, preventing "hallucinations" about off-topic subjects.
 
@@ -47,17 +47,17 @@ graph TD
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-- 🎙️ **Voice-Reactive Visuals**: Dynamic orb and waveform bars that react to microphone input intensity.
-- ⚡ **Instant Redis Search**: Uses **RediSearch** full-text lookup to retrieve relevant FAQ snippets in ~1ms.
-- 🛡️ **Strict FAQ Logic**: Python-level keyword validation prevents the bot from answering questions outside the local FAQ (e.g., "visit Kosovo").
-- 💬 **Streaming Responses**: Real-time LLM streaming using `smollm2:1.7b` for a seamless chat experience.
-- 🎨 **Premium Aesthetic**: Modern dark-themed interface built with **Tailwind CSS 4**.
+-  **Voice-Reactive Visuals**: Dynamic orb and waveform bars that react to microphone input intensity.
+-  **Instant Redis Search**: Uses **RediSearch** full-text lookup to retrieve relevant FAQ snippets in ~1ms.
+-  **Strict FAQ Logic**: Python-level keyword validation prevents the bot from answering questions outside the local FAQ (e.g., "visit Kosovo").
+-  **Streaming Responses**: Real-time LLM streaming using `smollm2:1.7b` for a seamless chat experience.
+-  **Premium Aesthetic**: Modern dark-themed interface built with **Tailwind CSS 4**.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Frontend**: Angular 21, Tailwind CSS 4, Lucide Angular.
 - **Backend**: FastAPI (Python 3.11+).
@@ -114,5 +114,5 @@ npm start
 - `src/app/app.ts`: Frontend chat orchestration and audio analysis.
 - `src/app/app.html`: Visual interface for the assistant.
 
-## 📝 Project Context
+##  Project Context
 Developed as part of the PFE (Projet de Fin d'Études) to demonstrate optimized RAG (Retrieval-Augmented Generation) patterns for lightweight, instant-reply chatbots.
