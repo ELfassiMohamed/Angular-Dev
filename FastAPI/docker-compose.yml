@@ -8,5 +8,15 @@ services:
       - ollama_models:/root/.ollama
     restart: unless-stopped
 
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis-faq
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 volumes:
   ollama_models:
+  redis_data:
